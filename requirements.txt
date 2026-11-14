@@ -1,0 +1,9 @@
+# Tested baseline: CPython 3.12, macOS arm64. Use only one OpenCV wheel.
+mediapipe==0.10.21
+numpy==1.26.4
+opencv-contrib-python==4.11.0.86
+PySide6-Essentials==6.12.0
+# Keep MediaPipe's transitive numerical stack compatible with NumPy 1.x.
+jax==0.4.38
+jaxlib==0.4.38
+protobuf==4.25.8
