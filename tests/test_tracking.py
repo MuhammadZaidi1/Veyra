@@ -137,7 +137,7 @@ class WorkerLifecycleTests(unittest.TestCase):
         self.assert_resources_released()
 
     def test_synthetic_face_publishes_centered_geometry_and_mesh_overlay(self):
-        normalized = np.array(((0.25, 0.25, 0.03), (0.75, 0.25, 0.02), (0.5, 0.75, -0.03)))
+        normalized = np.resize(np.array(((0.25, 0.25, 0.03), (0.75, 0.25, 0.02), (0.5, 0.75, -0.03))), (478, 3))
         self.detector.detect_for_video.return_value = SimpleNamespace(
             face_landmarks=[[SimpleNamespace(x=x, y=y, z=z) for x, y, z in normalized]]
         )
@@ -149,6 +149,46 @@ class WorkerLifecycleTests(unittest.TestCase):
         np.testing.assert_array_equal(packet["edges"], self.edges)
         self.assertTrue(np.isfinite(packet["points"]).all())
         self.assertFalse(np.array_equal(packet["rgb"], cv2.cvtColor(cv2.flip(before, 1), cv2.COLOR_BGR2RGB)))
+        self.assert_resources_released()
+
+    def test_invalid_partial_and_missing_detections_are_tracking_loss(self):
+        for landmarks in ([], [[SimpleNamespace(x=0, y=0, z=0)]],
+                          [[SimpleNamespace(x=np.nan, y=0, z=0)] * 478],
+                          [[SimpleNamespace(x=0, y=0)] * 478]):
+            with self.subTest(landmarks_count=len(landmarks)):
+                self.assertIsNone(tracking.extract_landmarks(SimpleNamespace(face_landmarks=landmarks)))
+
+    def test_partial_detection_still_releases_camera_and_publishes_empty_geometry(self):
+        self.detector.detect_for_video.return_value = SimpleNamespace(face_landmarks=[[SimpleNamespace(x=0, y=0, z=0)]])
+        self.run_worker()
+        self.assertIsNone(self.mailbox.packets[0]["points"])
+        self.assertEqual(self.errors(), [])
+        self.assert_resources_released()
+
+    def test_tracking_loss_and_recovery_publish_new_geometry_without_freezing(self):
+        face = [SimpleNamespace(x=.4, y=.4, z=.01)] * 478
+        self.detector.detect_for_video.side_effect = [SimpleNamespace(face_landmarks=[face]),
+                                                     SimpleNamespace(face_landmarks=[]),
+                                                     SimpleNamespace(face_landmarks=[face])]
+        self.capture.read.side_effect = [(True, self.frame.copy()) for _ in range(3)]
+        def publish(packet):
+            self.mailbox.packets.append(packet)
+            if len(self.mailbox.packets) == 3:
+                self.stop.set()
+        self.mailbox.publish = publish
+        self.run_worker()
+        self.assertIsNotNone(self.mailbox.packets[0]['points'])
+        self.assertIsNone(self.mailbox.packets[1]['points'])
+        self.assertIsNotNone(self.mailbox.packets[2]['points'])
+        self.assert_resources_released()
+
+    def test_468_vertex_detections_do_not_index_missing_iris_landmarks(self):
+        self.edges = np.array(((0, 1), (1, 2), (468, 477)), dtype=np.int32)
+        self.detector.detect_for_video.return_value = SimpleNamespace(face_landmarks=[
+            [SimpleNamespace(x=.4, y=.4, z=.01)] * 468])
+        self.run_worker()
+        self.assertEqual(self.errors(), [])
+        self.assertLess(self.mailbox.packets[0]['edges'].max(), 468)
         self.assert_resources_released()
 
 

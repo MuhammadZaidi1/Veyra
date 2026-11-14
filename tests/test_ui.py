@@ -112,6 +112,22 @@ class WindowTests(unittest.TestCase):
         self.assertTrue(signals)
         self.assertIsNone(self.window.canvas.points)
 
+    def test_smoothing_controls_emit_configuration_without_resetting_inspection_view(self):
+        received = []
+        self.window.smoothing_changed.connect(lambda enabled, cutoff: received.append((enabled, cutoff)))
+        self.window.canvas.yaw = 30
+        self.window.smoothing.setChecked(False)
+        self.window.cutoff.setValue(7)
+        self.assertEqual(received[-1], (False, 7))
+        self.assertEqual(self.window.canvas.yaw, 30)
+
+    def test_software_fallback_preserves_wireframe_and_marks_surface_controls_unavailable(self):
+        self.assertFalse(self.window.accelerated)
+        self.assertEqual(self.window.display_mode.currentText(), 'Wireframe')
+        self.assertFalse(self.window.display_mode.isEnabled())
+        self.assertFalse(self.window.light_strength.isEnabled())
+        self.assertIn('fallback', self.window.renderer_label.text())
+
 
 if __name__ == "__main__":
     unittest.main()

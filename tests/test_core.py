@@ -79,6 +79,11 @@ class StartupTests(unittest.TestCase):
             ["--duration", "-1"],
             ["--duration", "nan"],
             ["--duration", "inf"],
+            ["--smoothing-cutoff", "nan"],
+            ["--smoothing-cutoff", "0"],
+            ["--smoothing-beta", "-1"],
+            ["--smoothing-beta", "inf"],
+            ["--renderer", "unsupported"],
         ):
             with self.subTest(arguments=arguments), contextlib.redirect_stderr(io.StringIO()):
                 with self.assertRaises(SystemExit) as result:

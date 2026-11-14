@@ -9,6 +9,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from .core import Config
+from .smoothing import GeometryStream
 from .tracking import run_worker
 from .transport import FrameMailbox
 from .view3d import Face3DWindow
@@ -22,7 +23,7 @@ class PreviewWindow(QtWidgets.QWidget):
         self.setWindowTitle("Veyra — Live camera and landmarks")
         self.resize(800, 700)
         layout = QtWidgets.QVBoxLayout(self)
-        title = QtWidgets.QLabel("Veyra v0.1 · local face geometry research")
+        title = QtWidgets.QLabel("Veyra v0.2 · local face geometry research")
         title.setStyleSheet("font-size: 19px; font-weight: bold;")
         layout.addWidget(title)
         layout.addWidget(QtWidgets.QLabel(
@@ -33,7 +34,7 @@ class PreviewWindow(QtWidgets.QWidget):
         self.preview.setStyleSheet("background: #101923; color: #dce7ee;")
         layout.addWidget(self.preview, 1)
         self.metrics = QtWidgets.QLabel("FPS: —    Inference: — ms    Frame age: — ms")
-        self.metrics.setStyleSheet("font-family: monospace; font-size: 14px;")
+        self.metrics.setStyleSheet("font-family: Menlo; font-size: 13px;")
         layout.addWidget(self.metrics)
         self.status = QtWidgets.QLabel("Starting…")
         self.status.setWordWrap(True)
@@ -83,7 +84,9 @@ class Controller(QtCore.QObject):
         super().__init__()
         self.app = app
         self.preview = PreviewWindow(config.mirror)
-        self.geometry = Face3DWindow()
+        self.geometry = Face3DWindow(config.renderer, config.smoothing, config.smoothing_cutoff, config.display_mode)
+        self.stream = GeometryStream(config.smoothing, config.smoothing_cutoff, config.smoothing_beta)
+        self.geometry.smoothing_changed.connect(self.stream.configure)
         self.preview.closed.connect(self.request_quit)
         self.geometry.closed.connect(self.request_quit)
         context = multiprocessing.get_context("spawn")
@@ -106,6 +109,7 @@ class Controller(QtCore.QObject):
         self.stopped = False
         self.last_frame = None
         self.frame_count = 0
+        self.tracked_frames = 0
         self.last_metrics = None
         self.status_open = True
         self.timer = QtCore.QTimer(self)
@@ -126,6 +130,7 @@ class Controller(QtCore.QObject):
             return
         self.error = True
         self.stop.set()
+        self.stream.reset()
         self.preview.clear_image("Camera stopped")
         self.preview.metrics.setText("FPS: —    Inference: — ms    Frame age: — ms")
         self.geometry.update_face(None, np.empty((0, 2), dtype=int))
@@ -148,7 +153,11 @@ class Controller(QtCore.QObject):
             self.frame_count += 1
             self.last_frame = time.perf_counter()
             self.preview.update_image(latest["rgb"])
-            self.geometry.update_face(latest["points"], latest["edges"])
+            points = self.stream.update(latest["points"], latest["captured_at"])
+            if points is not None:
+                self.tracked_frames += 1
+            self.geometry.update_face(points, latest["edges"])
+            self.geometry.comparison_label.setText(self.stream.comparison_text())
             age = max(0, (time.perf_counter() - latest["captured_at"]) * 1000)
             metrics = (f"FPS: {latest['fps']:.1f}    Inference: {latest['inference_ms']:.1f} ms"
                        f"    Frame age: {age:.0f} ms")
@@ -157,8 +166,8 @@ class Controller(QtCore.QObject):
             width, height = latest["resolution"]
             if self.frame_count == 1:
                 print(f"Camera active: {width} × {height}; CPU inference; frames stay in RAM.", flush=True)
-            face = (f"Tracking {len(latest['points'])} estimated landmarks"
-                    if latest["points"] is not None else "No face detected — look toward the camera")
+            face = (f"Tracking {len(points)} estimated landmarks"
+                    if points is not None else "No valid face detected — look toward the camera")
             self.preview.status.setText(f"{face} · {width} × {height} · CPU")
             self.geometry.set_status(f"{face} · {metrics}")
         if not self.worker.is_alive() and not self.error:
@@ -166,6 +175,7 @@ class Controller(QtCore.QObject):
                             "Check terminal output, camera access, and the local model.")
         elif self.last_frame is not None and time.perf_counter() - self.last_frame > 2 and not self.error:
             self.preview.clear_image("Waiting for fresh camera frames…")
+            self.stream.reset()
             self.geometry.update_face(None, np.empty((0, 2), dtype=int))
             self.preview.metrics.setText("FPS: 0.0    Inference: — ms    Frame age: stale")
             self.set_status("Camera frames stalled; close the window to stop and restart.")
@@ -181,7 +191,11 @@ class Controller(QtCore.QObject):
             return
         self.stopped = True
         self.timer.stop()
+        self.geometry.refresh_render_metrics()
+        render_summary = self.geometry.render_metrics.text()
+        smoothing_summary = f"Smoothing {'on' if self.stream.enabled else 'off'}; filter CPU {self.stream.filter_ms:.3f} ms"
         self.stop.set()
+        self.stream.reset()
         self.worker.join(timeout=2)
         if self.worker.is_alive():
             self.worker.terminate()
@@ -199,10 +213,16 @@ class Controller(QtCore.QObject):
         self.geometry.close()
         if self.last_metrics:
             print(f"Displayed {self.frame_count} previews. {self.last_metrics}", flush=True)
+            print(f"Live surface updates: {self.tracked_frames}", flush=True)
+            print(self.geometry.renderer_label.text() + "; " + render_summary, flush=True)
+            print(smoothing_summary, flush=True)
         print("Veyra stopped; camera worker released.", flush=True)
 
 
 def run(config: Config, duration: float) -> int:
+    if config.renderer != "software":
+        from .render_gl import configure_surface_format
+        configure_surface_format()
     app = QtWidgets.QApplication(sys.argv[:1])
     app.setApplicationName("Veyra")
     controller = Controller(app, config, duration)

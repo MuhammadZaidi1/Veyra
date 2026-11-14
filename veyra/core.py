@@ -28,6 +28,11 @@ class Config:
     height: int = 480
     fps: int = 30
     mirror: bool = True
+    renderer: str = "auto"
+    display_mode: str = "Solid"
+    smoothing: bool = True
+    smoothing_cutoff: float = 4.0
+    smoothing_beta: float = 20.0
 
 
 def relative_geometry(landmarks: np.ndarray, width: int, height: int) -> np.ndarray:

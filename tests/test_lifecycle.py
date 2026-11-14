@@ -72,6 +72,37 @@ class NativeLifecycleTests(unittest.TestCase):
             raise SystemExit(result)
         """)
 
+    def test_surface_close_releases_worker_and_closes_both_windows(self):
+        self.run_native("""
+            from PySide6 import QtCore, QtWidgets
+            from veyra.render_gl import configure_surface_format
+            configure_surface_format()
+            qt_app = QtWidgets.QApplication([])
+            controller = app.Controller(qt_app, Config())
+            QtCore.QTimer.singleShot(800, controller.geometry.close)
+            qt_app.exec()
+            controller.shutdown()
+            result = int(controller.error or not controller.stopped
+                         or controller.preview.isVisible() or controller.geometry.isVisible())
+            print(f"SYNTHETIC_RESULT={result}", flush=True)
+            raise SystemExit(result)
+        """)
+
+    def test_terminal_interrupt_releases_worker_and_gpu_resources(self):
+        self.run_native("""
+            import os, signal
+            from PySide6 import QtCore
+            original_controller = app.Controller
+            class InterruptController(original_controller):
+                def __init__(self, *args, **kwargs):
+                    super().__init__(*args, **kwargs)
+                    QtCore.QTimer.singleShot(800, lambda: os.kill(os.getpid(), signal.SIGINT))
+            app.Controller = InterruptController
+            result = app.run(Config(), 0)
+            print(f"SYNTHETIC_RESULT={result}", flush=True)
+            raise SystemExit(result)
+        """)
+
 
 if __name__ == "__main__":
     unittest.main()

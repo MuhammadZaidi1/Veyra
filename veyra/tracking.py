@@ -6,6 +6,7 @@ import time
 import numpy as np
 
 from .core import Config, FrameRate, VideoClock, relative_geometry
+from .mesh import valid_face
 
 CAMERA_HELP = (
     "Camera unavailable. In System Settings > Privacy & Security > Camera, "
@@ -56,13 +57,26 @@ def annotate(frame, normalized, edges, contours, mirror):
         # Clipping keeps the overlay safe for landmarks outside the image.
         pixels[:, 0] = np.clip(pixels[:, 0], 0, width - 1)
         pixels[:, 1] = np.clip(pixels[:, 1], 0, height - 1)
-        cv2.polylines(frame, pixels[edges], False, (95, 135, 95), 1, cv2.LINE_AA)
-        cv2.polylines(frame, pixels[contours], False, (70, 225, 190), 1, cv2.LINE_AA)
+        valid_edges = edges[(edges < len(pixels)).all(axis=1)]
+        valid_contours = contours[(contours < len(pixels)).all(axis=1)]
+        cv2.polylines(frame, pixels[valid_edges], False, (95, 135, 95), 1, cv2.LINE_AA)
+        cv2.polylines(frame, pixels[valid_contours], False, (70, 225, 190), 1, cv2.LINE_AA)
         for x, y in pixels:
             cv2.circle(frame, (int(x), int(y)), 1, (210, 255, 235), -1, cv2.LINE_AA)
     if mirror:
         frame = cv2.flip(frame, 1)
     return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+
+def extract_landmarks(result):
+    """Treat partial, missing or nonfinite detections as tracking loss."""
+    try:
+        if not result.face_landmarks:
+            return None
+        points = np.array([(p.x, p.y, p.z) for p in result.face_landmarks[0]], dtype=np.float32)
+        return points if valid_face(points) else None
+    except (AttributeError, TypeError, ValueError):
+        return None
 
 
 def run_worker(config: Config, mailbox, stop, status):
@@ -110,16 +124,17 @@ def run_worker(config: Config, mailbox, stop, status):
             inference_start = time.perf_counter()
             result = landmarker.detect_for_video(image, clock.tick(inference_start - start))
             latency = (time.perf_counter() - inference_start) * 1000
-            normalized = None
+            normalized = extract_landmarks(result)
             geometry = None
-            if result.face_landmarks:
-                normalized = np.array([(p.x, p.y, p.z) for p in result.face_landmarks[0]], dtype=np.float32)
+            if normalized is not None:
                 geometry = relative_geometry(normalized, width, height)
+            frame_edges = (edges[(edges < len(geometry)).all(axis=1)]
+                           if geometry is not None and len(geometry) < 478 else edges)
             preview = annotate(frame, normalized, edges, contours, config.mirror)
             done = time.perf_counter()
             mailbox.publish({
                 "kind": "frame", "rgb": preview, "points": geometry,
-                "edges": edges, "fps": rate.update(done),
+                "edges": frame_edges, "fps": rate.update(done),
                 "inference_ms": latency, "captured_at": frame_start,
                 "resolution": (width, height),
             })

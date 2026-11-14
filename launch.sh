@@ -23,5 +23,5 @@ if [[ "$(uname -s)" == "Darwin" ]]; then
         "$PYTHON" -m veyra "$@"
 fi
 
-echo "Note: Veyra v0.1 is tested on macOS; this platform has no launcher network sandbox." >&2
+echo "Note: Veyra v0.2 is tested on macOS; this platform has no launcher network sandbox." >&2
 exec "$PYTHON" -m veyra "$@"
