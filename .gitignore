@@ -54,25 +54,25 @@ identities/
 *.pickle
 *.csv
 *.tsv
-*.png
-*.jpg
-*.jpeg
-*.webp
-*.bmp
-*.tif
-*.tiff
-*.heic
-*.mp4
-*.mov
-*.avi
-*.mkv
-*.webm
-*.ply
-*.obj
-*.stl
-*.glb
-*.gltf
-*.pcd
+*.[pP][nN][gG]
+*.[jJ][pP][gG]
+*.[jJ][pP][eE][gG]
+*.[wW][eE][bB][pP]
+*.[bB][mM][pP]
+*.[tT][iI][fF]
+*.[tT][iI][fF][fF]
+*.[hH][eE][iI][cC]
+*.[mM][pP][44]
+*.[mM][oO][vV]
+*.[aA][vV][iI]
+*.[mM][kK][vV]
+*.[wW][eE][bB][mM]
+*.[pP][lL][yY]
+*.[oO][bB][jJ]
+*.[sS][tT][lL]
+*.[gG][lL][bB]
+*.[gG][lL][tT][fF]
+*.[pP][cC][dD]
 
 # Local configuration and transient files
 .env
@@ -98,3 +98,19 @@ experiments/
 *.parquet
 *.hdf
 events.out.tfevents.*
+
+# Blender scenes/renders and local scratch files (outside runs too)
+*.blend
+*.blend[0-9]
+*.blend[0-9][0-9]
+*.[eE][xX][rR]
+*.[hH][dD][rR]
+*.temp
+*~
+tmp/
+temp/
+.geometry-import-*/
+/Microsoft/Windows/PowerShell/ModuleAnalysisCache
+
+# Public, pinned Apache-2.0 reference geometry; never a private face scan
+!third_party/mediapipe-reference/canonical_face_model.obj

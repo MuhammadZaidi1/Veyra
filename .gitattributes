@@ -1,0 +1,4 @@
+# Preserve pinned upstream bytes: SHA256 validation must survive checkout.
+third_party/mediapipe-reference/canonical_face_model.obj -text
+third_party/mediapipe-reference/face_mesh_connections.py -text
+third_party/mediapipe-reference/LICENSE -text

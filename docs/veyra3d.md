@@ -9,7 +9,7 @@ The working MediaPipe/OpenCV/Qt v0.2 prototype remains unchanged in `veyra/`. It
 The optional `.venv-research` is separate from the working `.venv`. Research pins PyTorch 2.9.1, NumPy 1.26.4 and Pillow 13.0.0; it does not install torchvision, fetch pretrained weights, or change the baseline dependencies.
 
 ```bash
-cd /Users/muhammadabbas/Documents/Veyra
+cd /path/to/Veyra
 
 # Already installed here; use this on a fresh research setup.
 ./setup-research.sh

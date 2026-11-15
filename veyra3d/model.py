@@ -36,7 +36,9 @@ class Veyra3D(nn.Module):
             nn.GroupNorm(8, 16), nn.SiLU(),
             SeparableBlock(16, 24), SeparableBlock(24, 32),
             SeparableBlock(32, 64), SeparableBlock(64, 96),
-            nn.AdaptiveAvgPool2d((2, 2)), nn.Flatten(),
+            # Five stride-2 stages give S/32; supported sizes divide into 2x2 bins.
+            # Fixed pooling preserves these bins and supports deterministic CUDA backward.
+            nn.AvgPool2d(self.config.image_size // 64), nn.Flatten(),
         )
         self.decoder = nn.Sequential(
             nn.Linear(96 * 2 * 2, self.config.latent_dim), nn.SiLU(),

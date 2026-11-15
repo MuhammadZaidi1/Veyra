@@ -66,6 +66,13 @@ class ExperimentTests(unittest.TestCase):
         for name in continuous['model']:
             torch.testing.assert_close(continuous['model'][name], restored['model'][name], rtol=0, atol=0)
 
+    @unittest.skipUnless(torch.cuda.is_available(), 'CUDA unavailable')
+    def test_epoch_boundary_resume_matches_uninterrupted_cuda_weights_exactly(self):
+        self.config = replace(self.config, device='cuda')
+        self.test_epoch_boundary_resume_matches_uninterrupted_cpu_weights_exactly()
+        self.assertTrue(torch.are_deterministic_algorithms_enabled())
+        self.assertFalse(torch.is_deterministic_algorithms_warn_only_enabled())
+
     def test_changed_training_or_dataset_signature_rejects_resume(self):
         train(self.config, quiet=True)
         with self.assertRaisesRegex(ValueError,'config changed'):

@@ -36,6 +36,37 @@ class ModelTests(unittest.TestCase):
         optimizer.step()
         self.assertFalse(torch.equal(before, model.decoder[-1].weight))
 
+    def test_pooling_matches_adaptive_forward_and_backward_for_all_sizes(self):
+        for size in (64, 128, 192, 256):
+            with self.subTest(size=size):
+                model = Veyra3D(ModelConfig(size, 32))
+                features = torch.randn(2, 96, size // 32, size // 32, requires_grad=True)
+                pooled = model.encoder[-2](features)
+                reference = torch.nn.functional.adaptive_avg_pool2d(features, (2, 2))
+                torch.testing.assert_close(pooled, reference)
+                gradient = torch.randn_like(reference)
+                actual_grad, = torch.autograd.grad(pooled, features, gradient)
+                reference_grad, = torch.autograd.grad(reference, features, gradient)
+                torch.testing.assert_close(actual_grad, reference_grad)
+
+    @unittest.skipUnless(torch.cuda.is_available(), 'CUDA unavailable')
+    def test_cuda_backward_is_strictly_deterministic_for_all_sizes(self):
+        initialize(ExperimentConfig(device='cuda'))
+        for size in (64, 128, 192, 256):
+            with self.subTest(size=size):
+                model = Veyra3D(ModelConfig(size, 32)).cuda()
+                image = torch.randn(1, 3, size, size, device='cuda')
+                gradients = []
+                for _ in range(2):
+                    model.zero_grad(set_to_none=True)
+                    model(image).square().sum().backward()
+                    gradients.append([p.grad.detach().clone() for p in model.parameters()])
+                for first, second in zip(*gradients):
+                    self.assertTrue(torch.isfinite(first).all())
+                    torch.testing.assert_close(first, second, rtol=0, atol=0)
+                self.assertTrue(torch.are_deterministic_algorithms_enabled())
+                self.assertFalse(torch.is_deterministic_algorithms_warn_only_enabled())
+
     def test_input_contract_rejects_wrong_shapes_and_byte_images(self):
         model = Veyra3D()
         for image in (torch.zeros(1, 3, 64, 64), torch.zeros(1, 1, 128, 128),
