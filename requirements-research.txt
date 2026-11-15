@@ -1,0 +1,4 @@
+# Independent research environment; the v0.2 environment stays unchanged.
+torch==2.9.1
+numpy==1.26.4
+pillow==13.0.0

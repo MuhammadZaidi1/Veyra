@@ -1,0 +1,11 @@
+{
+  "model": {"image_size": 64, "latent_dim": 64},
+  "data": {"kind": "synthetic", "train_samples": 8, "val_samples": 4, "test_samples": 4},
+  "seed": 42,
+  "device": "cpu",
+  "epochs": 2,
+  "batch_size": 4,
+  "accumulation_steps": 1,
+  "learning_rate": 0.001,
+  "run_dir": "runs/veyra3d/synthetic-smoke"
+}

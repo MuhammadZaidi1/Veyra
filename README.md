@@ -1,4 +1,36 @@
-# Veyra v0.2
+# Veyra v0.3 — Veyra3D research foundation
+
+This milestone adds a separate, trainable PyTorch module in `veyra3d/`, with a lightweight encoder-decoder, local dataset contracts, masked geometry objectives, reproducible training/evaluation, and resumable checkpoints. **There is no validated custom facial reconstruction model yet.** Synthetic training checks pipeline mechanics only.
+
+The working MediaPipe webcam prototype remains the v0.2 baseline below. It is preserved while the custom model is developed, and has not been replaced or connected to Veyra3D. FaceUnlock is not modified. No facial dataset download, webcam collection, full model training, commit or push is part of this milestone.
+
+## Veyra3D quick start
+
+The optional `.venv-research` has been installed separately from `.venv`:
+
+```bash
+cd /Users/muhammadabbas/Documents/Veyra
+./research.sh doctor --device cpu
+./research.sh smoke --device cpu
+./research.sh smoke --device mps
+.venv-research/bin/python -m unittest discover -s tests_research -v
+```
+
+On a fresh research setup, run `./setup-research.sh` first. The `smoke` command performs only four optimizer steps on colored patterns and deformed grids, verifies temporary checkpoint save/load/resume and held-out evaluation, then removes its artifacts. It never opens a camera or downloads data.
+
+The default network has **258,644 parameters**, accepts a normalized **128×128 RGB crop**, and outputs **468 centered relative XYZ vertices**. CPU is the default; Apple MPS has also been probed. NVIDIA CUDA support is designed for a future Windows/GTX 1660 Super environment and remains unverified on that hardware.
+
+See [the Veyra3D research guide](docs/veyra3d.md) for architecture, geometry/data contracts, losses, exact test commands, checkpoint/resume behavior, limitations and Windows preparation. Private manifests, datasets, model weights and experiment artifacts remain excluded from Git.
+
+Verified on this M1 Pro Mac on **2026-11-14**:
+
+- **32 research tests passed**, including exact CPU resume, local-manifest integration on generated fixtures, a spawned loader worker, masking, split/content leakage checks, atomic checkpoint failure handling and Git exclusions.
+- All **51 existing v0.2 tests passed again** after implementation, including native GPU and camera-cleanup regressions. The baseline source, launcher and dependency files were unchanged.
+- CPU and MPS forward/backward/optimizer probes passed; the MPS output matched the CPU reference within the configured numerical tolerance.
+- CPU and MPS four-step synthetic smoke runs passed checkpoint roundtrip, resume, validation and a separate held-out test split. Temporary weights were removed afterward. Synthetic losses are not facial reconstruction accuracy.
+- No full training or facial data collection/download was performed. The Windows CUDA path remains unverified until tested on that hardware.
+
+## Working MediaPipe prototype — v0.2 baseline
 
 A local research prototype with a live OpenCV webcam preview and a separate interactive **shaded, triangulated facial surface**, driven by MediaPipe Face Landmarker. Wireframe and combined views remain available, with optional adaptive temporal smoothing and adjustable lighting.
 

@@ -86,3 +86,15 @@ identities/
 /core.[0-9]*
 .vscode/
 .idea/
+
+# Research runs, private split manifests, and experiment artifacts
+runs/
+experiments/
+*.jsonl
+*.jsonl.gz
+*.tfrecord
+*.tfrecords
+*.arrow
+*.parquet
+*.hdf
+events.out.tfevents.*

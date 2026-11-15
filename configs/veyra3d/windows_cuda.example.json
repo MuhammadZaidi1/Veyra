@@ -1,0 +1,19 @@
+{
+  "model": {"image_size": 128, "latent_dim": 128},
+  "data": {
+    "kind": "manifest",
+    "root": "data/approved",
+    "train_manifest": "train.jsonl",
+    "val_manifest": "val.jsonl",
+    "test_manifest": "test.jsonl"
+  },
+  "device": "cuda",
+  "epochs": 1,
+  "batch_size": 8,
+  "accumulation_steps": 2,
+  "workers": 0,
+  "amp": false,
+  "deterministic": true,
+  "seed": 42,
+  "run_dir": "runs/veyra3d/windows-cuda-pilot"
+}
