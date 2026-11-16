@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 class CheckpointHygieneTests(unittest.TestCase):
  def test_ignored_artifacts_and_public_reference_exception(self):
-  paths=['renders/face.png','private/me.jpeg','private/ME.JPG','private/SCAN.OBJ','data/person/review.json','datasets/train.jsonl','checkpoints/a.pt','.venv-research/Scripts/python.exe','scratch/scene.blend','scratch/scene.blend1','scratch/render.exr','temp/a.json','a.tmp','Microsoft/Windows/PowerShell/ModuleAnalysisCache']
+  paths=['renders/face.png','renders/geometry.json','private/person.json','private/notes.txt','.private/local.json','secrets/local.json','.aws/credentials','private/me.jpeg','private/ME.JPG','private/SCAN.OBJ','data/person/review.json','datasets/train.jsonl','checkpoints/a.pt','.venv-research/Scripts/python.exe','scratch/scene.blend','scratch/scene.blend1','scratch/render.exr','temp/a.json','a.tmp','Microsoft/Windows/PowerShell/ModuleAnalysisCache']
   r=subprocess.run(['git','check-ignore','--no-index',*paths],cwd=ROOT,capture_output=True,text=True)
   self.assertEqual(set(r.stdout.splitlines()),set(paths))
   r=subprocess.run(['git','check-ignore','--no-index','third_party/mediapipe-reference/canonical_face_model.obj'],cwd=ROOT,capture_output=True,text=True)

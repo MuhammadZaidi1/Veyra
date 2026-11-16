@@ -1,0 +1,23 @@
+{
+  "schema": "veyra-canonical-learning-curve-v1",
+  "dataset_root": "runs/veyra3d/canonical-control-001",
+  "execution": {
+    "model": {"image_size": 64, "latent_dim": 64},
+    "loss": {"vertex": 1.0, "edge": 0.0, "normal": 0.0, "huber_beta": 0.02},
+    "device": "cuda",
+    "seed": 42,
+    "threads": 2,
+    "batch_size": 3,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "workers": 0,
+    "deterministic": true,
+    "amp": false
+  },
+  "experiments": [
+    {"name": "01-original-longer", "max_steps": 200, "initialization": "random", "input": "rgb", "fit": "all_train"},
+    {"name": "02-image-blind", "max_steps": 200, "initialization": "random", "input": "mean_training_image", "fit": "all_train"},
+    {"name": "03-template-initialized", "max_steps": 200, "initialization": "training_mean_head", "input": "rgb", "fit": "all_train"},
+    {"name": "04-heldout-lighting", "max_steps": 200, "initialization": "random", "input": "rgb", "fit": "key3_only"}
+  ]
+}

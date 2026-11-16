@@ -183,6 +183,22 @@ On macOS, always use `launch.sh` so its network-denial sandbox also applies to n
 
 The separate FaceUnlock macOS application is not connected or modified. No commit or push is performed by setup, launch or development scripts.
 
+## Veyra3D research checkpoint
+
+The separate `veyra3d/` research model retains its 468-point output architecture.
+The current executable control uses the pinned Apache-2.0 canonical template:
+
+- [Canonical rendering, coordinates, licensing and setup](docs/veyra3d-canonical-render-control.md)
+- [Bounded CUDA learning curves and limitations](docs/veyra3d-canonical-learning-curve.md)
+- [All-468 MakeHuman supervision decision](docs/veyra3d-all468-supervision.md)
+
+MakeHuman proposals and the native-topology study are historical diagnostics.
+Zero MakeHuman points have independently verified anatomical correspondence;
+they are excluded from training. The canonical control learns pose-conditioned
+coordinates of one synthetic template and establishes no identity-recognition
+accuracy. Generated renders, datasets, checkpoints and runs stay local and are
+ignored by Git. Public reference hashes and third-party notices are tracked.
+
 ## Limitations and references
 
 The 468-vertex facial surface is coarse. It has no camera calibration, measured depth, full head reconstruction, teeth, eyeballs or physically based skin material. Smoothing can suppress small expressions or introduce lag. Glasses, glare, profile poses, lighting and occlusion can destabilize the pretrained estimator; added smoothing does not establish correctness. Only one face is tracked. A visible wireframe fallback preserves tracking if the shaded renderer is unavailable.

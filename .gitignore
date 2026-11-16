@@ -48,6 +48,10 @@ face_scans/
 scans/
 embeddings/
 identities/
+private/
+.private/
+secrets/
+.aws/
 *.npy
 *.npz
 *.pkl
@@ -90,6 +94,7 @@ identities/
 # Research runs, private split manifests, and experiment artifacts
 runs/
 experiments/
+renders/
 *.jsonl
 *.jsonl.gz
 *.tfrecord

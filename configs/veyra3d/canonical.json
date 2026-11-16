@@ -1,0 +1,20 @@
+{
+  "control_schema": "veyra-canonical-render-control-v1",
+  "warning": "Use scripts.canonical_training only. Single undeformed template; rendering-condition control, not human or identity accuracy.",
+  "dataset_root": "runs/veyra3d/canonical-control-001",
+  "run_dir": "runs/veyra3d/canonical-control-training-001",
+  "experiment": {
+    "model": {"image_size": 64, "latent_dim": 64},
+    "loss": {"vertex": 1.0, "edge": 0.0, "normal": 0.0, "huber_beta": 0.02},
+    "device": "cuda",
+    "seed": 42,
+    "threads": 2,
+    "epochs": 2,
+    "batch_size": 3,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "workers": 0,
+    "deterministic": true,
+    "amp": false
+  }
+}

@@ -6,7 +6,11 @@
   These are reference assets, not private images, scans, model weights or data.
 - `blender-scripts-GPL-3.0-or-later.txt` supplies the full GPL text for scripts
   explicitly marked `SPDX-License-Identifier: GPL-3.0-or-later`: Blender prototype,
-  correspondence, audit rendering, annotation preparation/UI/integration check.
+  correspondence, audit rendering, annotation preparation/UI/integration check,
+  and canonical diagnostic/dataset-control rendering. This includes the new
+  `scripts/blender_*` entry points and `scripts/render_dataset.py` carrying that
+  SPDX header. Procedural outputs do not change the canonical asset's Apache-2.0
+  provenance; see the canonical-control documentation for output attribution.
   The text was copied unchanged from the installed Blender license/spdx directory;
   no Blender or MPFB executable/add-on code is vendored here.
 - MakeHuman core assets are loaded from the user's MPFB installation, not bundled.
